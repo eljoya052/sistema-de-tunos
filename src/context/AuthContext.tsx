@@ -89,14 +89,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
-  const login = async (email: string, _password?: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const profile = await repository.getProfileByEmail(email);
+      const trimmedEmail = email.trim().toLowerCase();
+      const profile = await repository.getProfileByEmail(trimmedEmail);
       if (!profile) {
         return { success: false, error: 'No se encontró ninguna cuenta registrada con este correo.' };
       }
       if (!profile.active) {
         return { success: false, error: 'Esta cuenta ha sido desactivada por el administrador.' };
+      }
+
+      // Enforce strict authentication for Administrator role
+      if (profile.role === 'ADMIN' || trimmedEmail === 'admin@operativo.cl') {
+        if (!password || password.trim() !== 'admin123') {
+          return {
+            success: false,
+            error: 'Contraseña de administrador requerida o incorrecta. Solo el administrador autorizado puede acceder.'
+          };
+        }
       }
 
       setUser(profile);
@@ -115,6 +126,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const switchUser = async (profileId: string) => {
     const profile = await repository.getProfileById(profileId);
     if (profile && profile.active) {
+      // Prevent unauthorized switching to ADMIN without password
+      if (profile.role === 'ADMIN' && user?.role !== 'ADMIN') {
+        return;
+      }
       setUser(profile);
       if (profile.desk_number) {
         setDeskNumber(profile.desk_number);

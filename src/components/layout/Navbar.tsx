@@ -175,12 +175,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                           Conmutar usuario de prueba:
                         </p>
                         <div className="space-y-1">
-                          <button
-                            onClick={() => { switchUser('user-admin-01'); setShowUserDropdown(false); navigate('/admin'); }}
-                            className={`w-full text-left px-2 py-1 text-xs rounded-md transition ${user.id === 'user-admin-01' ? 'bg-indigo-100 text-indigo-900 font-semibold' : 'hover:bg-slate-200 text-slate-700'}`}
-                          >
-                            🛡️ Administrador General
-                          </button>
+                          {user.role === 'ADMIN' && (
+                            <button
+                              onClick={() => { switchUser('user-admin-01'); setShowUserDropdown(false); navigate('/admin'); }}
+                              className={`w-full text-left px-2 py-1 text-xs rounded-md transition ${user.id === 'user-admin-01' ? 'bg-indigo-100 text-indigo-900 font-semibold' : 'hover:bg-slate-200 text-slate-700'}`}
+                            >
+                              🛡️ Administrador General
+                            </button>
+                          )}
                           <button
                             onClick={() => { switchUser('user-pro-med'); setShowUserDropdown(false); navigate('/profesional'); }}
                             className={`w-full text-left px-2 py-1 text-xs rounded-md transition ${user.id === 'user-pro-med' ? 'bg-indigo-100 text-indigo-900 font-semibold' : 'hover:bg-slate-200 text-slate-700'}`}
