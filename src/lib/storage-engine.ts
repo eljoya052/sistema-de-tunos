@@ -28,6 +28,8 @@ export interface DatabaseState {
 }
 
 export const INITIAL_SERVICES: Omit<Service, 'id' | 'created_at'>[] = [
+  { code: 'MED', name: 'Medicina General', active: true, description: 'Consulta médica preventiva, diagnóstico clínico, recetas y derivaciones' },
+  { code: 'OFT', name: 'Oftalmología', active: true, description: 'Evaluación de agudeza visual, fondo de ojo y recetas ópticas' },
   { code: 'FON', name: 'Fonoaudiología', active: true, description: 'Evaluación y terapia vocal, auditiva y del habla' },
   { code: 'PSI', name: 'Psicología', active: true, description: 'Contención emocional, orientación y salud mental' },
   { code: 'ASO', name: 'Asistente social', active: true, description: 'Orientación en beneficios estatales, ficha social y subsidios' },
@@ -47,6 +49,26 @@ export const INITIAL_PROFILES: Profile[] = [
     active: true,
     created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
     updated_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: 'user-pro-med',
+    email: 'medicina@operativo.cl',
+    full_name: 'Medicina General',
+    role: 'PROFESSIONAL',
+    active: true,
+    desk_number: 'Box 5',
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 'user-pro-oft',
+    email: 'oftalmologia@operativo.cl',
+    full_name: 'Oftalmología',
+    role: 'PROFESSIONAL',
+    active: true,
+    desk_number: 'Box 6',
+    created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updated_at: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
     id: 'user-pro-psi',
@@ -164,6 +186,8 @@ export function generateInitialSeedState(): DatabaseState {
   }));
 
   const professionalServices: ProfessionalService[] = [
+    { id: 'ps-med', professional_id: 'user-pro-med', service_id: 'srv-med', active: true, created_at: now.toISOString() },
+    { id: 'ps-oft', professional_id: 'user-pro-oft', service_id: 'srv-oft', active: true, created_at: now.toISOString() },
     { id: 'ps-psi', professional_id: 'user-pro-psi', service_id: 'srv-psi', active: true, created_at: now.toISOString() },
     { id: 'ps-enf', professional_id: 'user-pro-enf', service_id: 'srv-enf', active: true, created_at: now.toISOString() },
     { id: 'ps-aso', professional_id: 'user-pro-aso', service_id: 'srv-aso', active: true, created_at: now.toISOString() },
@@ -212,6 +236,8 @@ export function generateInitialSeedState(): DatabaseState {
 
   // Service counters all initialized at zero
   const serviceCounters: ServiceCounter[] = [
+    { id: 'sc-med', event_id: eventId, service_id: 'srv-med', last_number: 0, updated_at: now.toISOString() },
+    { id: 'sc-oft', event_id: eventId, service_id: 'srv-oft', last_number: 0, updated_at: now.toISOString() },
     { id: 'sc-psi', event_id: eventId, service_id: 'srv-psi', last_number: 0, updated_at: now.toISOString() },
     { id: 'sc-enf', event_id: eventId, service_id: 'srv-enf', last_number: 0, updated_at: now.toISOString() },
     { id: 'sc-vet', event_id: eventId, service_id: 'srv-vet', last_number: 0, updated_at: now.toISOString() },
@@ -440,6 +466,38 @@ export class ReactiveStorageEngine {
             }
             return ev;
           });
+
+          // Ensure all INITIAL_SERVICES exist in parsed.services
+          for (const initSrv of INITIAL_SERVICES) {
+            const srvId = `srv-${initSrv.code.toLowerCase()}`;
+            if (!parsed.services.some((s: Service) => s.id === srvId || s.code === initSrv.code)) {
+              parsed.services.push({
+                id: srvId,
+                name: initSrv.name,
+                code: initSrv.code,
+                active: initSrv.active,
+                description: initSrv.description,
+                created_at: new Date().toISOString(),
+              });
+            }
+            if (parsed.activeEventId && !parsed.serviceCounters.some((sc: ServiceCounter) => sc.service_id === srvId && sc.event_id === parsed.activeEventId)) {
+              parsed.serviceCounters.push({
+                id: `sc-${initSrv.code.toLowerCase()}`,
+                event_id: parsed.activeEventId,
+                service_id: srvId,
+                last_number: 0,
+                updated_at: new Date().toISOString(),
+              });
+            }
+          }
+
+          // Ensure all INITIAL_PROFILES exist in parsed.profiles
+          for (const initProf of INITIAL_PROFILES) {
+            if (!parsed.profiles.some((p: Profile) => p.id === initProf.id || p.email === initProf.email)) {
+              parsed.profiles.push(initProf);
+            }
+          }
+
           return parsed;
         }
       }

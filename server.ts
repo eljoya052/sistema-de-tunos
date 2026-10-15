@@ -26,10 +26,13 @@ if (!isTsxActive) {
 
 async function runServer() {
   const express = (await import('express')).default;
-  const { storageEngine, generateInitialSeedState } = await import('./src/lib/storage-engine.ts');
+  const { storageEngine, generateInitialSeedState, INITIAL_SERVICES, INITIAL_PROFILES } = await import('./src/lib/storage-engine.ts');
 
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const argPortIdx = process.argv.findIndex((a) => a === '--port' || a === '-p');
+  const cliPort = argPortIdx !== -1 && process.argv[argPortIdx + 1] ? Number(process.argv[argPortIdx + 1]) : null;
+  const isProd = process.env.NODE_ENV === 'production';
+  const PORT = cliPort || (isProd ? (Number(process.env.PORT) || 3000) : 3000);
 
   app.use(express.json());
 
@@ -48,8 +51,57 @@ async function runServer() {
       const raw = fs.readFileSync(DB_FILE, 'utf-8');
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.tickets) && Array.isArray(parsed.events)) {
+        if (!Array.isArray(parsed.services)) parsed.services = [];
+        if (!Array.isArray(parsed.profiles)) parsed.profiles = [];
+        if (!Array.isArray(parsed.serviceCounters)) parsed.serviceCounters = [];
+        if (!Array.isArray(parsed.professionalServices)) parsed.professionalServices = [];
+
+        // Ensure missing services are added
+        for (const initSrv of INITIAL_SERVICES) {
+          const srvId = `srv-${initSrv.code.toLowerCase()}`;
+          if (!parsed.services.some((s: any) => s.id === srvId || s.code === initSrv.code)) {
+            parsed.services.push({
+              id: srvId,
+              name: initSrv.name,
+              code: initSrv.code,
+              active: initSrv.active,
+              description: initSrv.description,
+              created_at: new Date().toISOString(),
+            });
+          }
+          if (parsed.activeEventId && !parsed.serviceCounters.some((sc: any) => sc.service_id === srvId && sc.event_id === parsed.activeEventId)) {
+            parsed.serviceCounters.push({
+              id: `sc-${initSrv.code.toLowerCase()}`,
+              event_id: parsed.activeEventId,
+              service_id: srvId,
+              last_number: 0,
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
+
+        // Ensure missing profiles are added
+        for (const initProf of INITIAL_PROFILES) {
+          if (!parsed.profiles.some((p: any) => p.id === initProf.id || p.email === initProf.email)) {
+            parsed.profiles.push(initProf);
+          }
+        }
+
+        // Ensure professional services assignments exist
+        if (!parsed.professionalServices.some((ps: any) => ps.id === 'ps-med')) {
+          parsed.professionalServices.push({ id: 'ps-med', professional_id: 'user-pro-med', service_id: 'srv-med', active: true, created_at: new Date().toISOString() });
+        }
+        if (!parsed.professionalServices.some((ps: any) => ps.id === 'ps-oft')) {
+          parsed.professionalServices.push({ id: 'ps-oft', professional_id: 'user-pro-oft', service_id: 'srv-oft', active: true, created_at: new Date().toISOString() });
+        }
+
         storageEngine.setState(parsed);
-        console.log('[TurnoSocial Server] Database state loaded from .data/db_state.json');
+        try {
+          fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), 'utf-8');
+        } catch {
+          // ignore disk write errors
+        }
+        console.log('[TurnoSocial Server] Database state loaded and synced with all services');
       }
     } catch (err) {
       console.warn('[TurnoSocial Server] Failed to read db_state.json, initializing fresh seed:', err);
@@ -180,11 +232,10 @@ async function runServer() {
   }, 15000);
 
   // Mounting Vite in development or static assets in production
-  const isProd = process.env.NODE_ENV === 'production';
   if (!isProd) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false },
       appType: 'spa',
     });
     app.use(vite.middlewares);

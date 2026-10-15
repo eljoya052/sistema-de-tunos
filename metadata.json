@@ -1,6 +1,6 @@
 {
   "name": "TurnoSocial - Gestión de Turnos para Operativos Sociales",
-  "description": "Sistema integral de gestión de turnos en tiempo real para operativos sociales con 8 servicios profesionales, panel administrativo, módulo de atención profesional y pantalla pública de llamados.",
+  "description": "Sistema integral de gestión de turnos en tiempo real para operativos sociales con 10 servicios profesionales (Medicina General, Oftalmología, Fonoaudiología, Psicología, Asistente Social, Enfermería, Asesoría Jurídica, Veterinaria, Kinesiología y Barbería), panel administrativo, módulo de atención profesional y pantalla pública de llamados.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

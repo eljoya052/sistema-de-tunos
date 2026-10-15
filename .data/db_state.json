@@ -107,6 +107,26 @@
       "desk_number": "Sillón 1",
       "created_at": "2026-10-12T16:13:20.249Z",
       "updated_at": "2026-10-12T16:13:20.249Z"
+    },
+    {
+      "id": "user-pro-med",
+      "email": "medicina@operativo.cl",
+      "full_name": "Medicina General",
+      "role": "PROFESSIONAL",
+      "active": true,
+      "desk_number": "Box 5",
+      "created_at": "2026-10-15T17:14:52.138Z",
+      "updated_at": "2026-10-15T17:14:52.138Z"
+    },
+    {
+      "id": "user-pro-oft",
+      "email": "oftalmologia@operativo.cl",
+      "full_name": "Oftalmología",
+      "role": "PROFESSIONAL",
+      "active": true,
+      "desk_number": "Box 6",
+      "created_at": "2026-10-15T17:14:52.138Z",
+      "updated_at": "2026-10-15T17:14:52.138Z"
     }
   ],
   "services": [
@@ -173,6 +193,22 @@
       "active": true,
       "description": "Cortes de cabello y cuidado personal comunitario",
       "created_at": "2026-10-10T16:13:27.251Z"
+    },
+    {
+      "id": "srv-med",
+      "code": "MED",
+      "name": "Medicina General",
+      "active": true,
+      "description": "Consulta médica preventiva, diagnóstico clínico, recetas y derivaciones",
+      "created_at": "2026-10-15T17:14:52.138Z"
+    },
+    {
+      "id": "srv-oft",
+      "code": "OFT",
+      "name": "Oftalmología",
+      "active": true,
+      "description": "Evaluación de agudeza visual, fondo de ojo y recetas ópticas",
+      "created_at": "2026-10-15T17:14:52.138Z"
     }
   ],
   "professionalServices": [
@@ -231,6 +267,20 @@
       "service_id": "srv-bar",
       "active": true,
       "created_at": "2026-10-14T16:13:20.251Z"
+    },
+    {
+      "id": "ps-med",
+      "professional_id": "user-pro-med",
+      "service_id": "srv-med",
+      "active": true,
+      "created_at": "2026-10-15T17:14:52.138Z"
+    },
+    {
+      "id": "ps-oft",
+      "professional_id": "user-pro-oft",
+      "service_id": "srv-oft",
+      "active": true,
+      "created_at": "2026-10-15T17:14:52.138Z"
     }
   ],
   "people": [
@@ -1259,6 +1309,20 @@
       "service_id": "srv-bar",
       "last_number": 16,
       "updated_at": "2026-10-14T16:40:03.263Z"
+    },
+    {
+      "id": "sc-med",
+      "event_id": "ev-central-2026",
+      "service_id": "srv-med",
+      "last_number": 0,
+      "updated_at": "2026-10-15T17:14:52.138Z"
+    },
+    {
+      "id": "sc-oft",
+      "event_id": "ev-central-2026",
+      "service_id": "srv-oft",
+      "last_number": 0,
+      "updated_at": "2026-10-15T17:14:52.138Z"
     }
   ],
   "publicCalls": [

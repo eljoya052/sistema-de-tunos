@@ -123,8 +123,13 @@ export const PublicDisplayPage: React.FC = () => {
       loadData();
     }, 300);
 
+    const unsubSound = soundManager.subscribe((enabled) => {
+      setSoundEnabled(enabled);
+    });
+
     return () => {
       unsubscribe();
+      unsubSound();
       window.removeEventListener('turno_social_call', handleCustomCall);
       window.removeEventListener('storage', handleStorageEvent);
       clearInterval(pollInterval);
@@ -133,13 +138,8 @@ export const PublicDisplayPage: React.FC = () => {
   }, []);
 
   const toggleSound = () => {
-    const enabled = soundManager.enableAudio();
-    if (enabled) {
-      soundManager.playChime();
-      setSoundEnabled(true);
-    } else {
-      setSoundEnabled(false);
-    }
+    const active = soundManager.toggleAudio();
+    setSoundEnabled(active);
   };
 
   const toggleFullscreen = () => {
@@ -397,13 +397,13 @@ export const PublicDisplayPage: React.FC = () => {
               onClick={toggleSound}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg border transition cursor-pointer ${
                 soundEnabled
-                  ? 'bg-emerald-950 border-emerald-600 text-emerald-400'
-                  : 'bg-rose-950/80 border-rose-600 text-rose-300 animate-pulse'
+                  ? 'bg-emerald-950/90 border-emerald-500 text-emerald-300 hover:bg-emerald-900 shadow-xs'
+                  : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:bg-slate-700'
               }`}
-              title="Activar o probar sonido de campanilla"
+              title={soundEnabled ? 'Desactivar sonido (Silenciar campanilla)' : 'Activar sonido de campanilla'}
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              <span>{soundEnabled ? 'Sonido Activado' : 'Activar Sonido'}</span>
+              {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
+              <span>{soundEnabled ? 'Desactivar Sonido' : 'Activar Sonido'}</span>
             </button>
 
             {/* Fullscreen toggle */}

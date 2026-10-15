@@ -5,7 +5,7 @@ import { INITIAL_PROFILES } from '../../lib/storage-engine';
 import { Lock, Mail, ArrowRight, Tv, ShieldCheck, UserCheck, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('admin@operativo.cl');
   const [password, setPassword] = useState('admin123');
@@ -69,6 +69,24 @@ export const LoginPage: React.FC = () => {
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs text-rose-800">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {user && (
+            <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] text-indigo-700 font-medium">Sesión activa en este equipo:</p>
+                <p className="text-xs font-bold text-indigo-950">
+                  {user.full_name} ({user.role === 'ADMIN' ? 'Administrador' : user.desk_number || 'Profesional'})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(user.role === 'ADMIN' ? '/admin' : '/profesional')}
+                className="shrink-0 px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition shadow-xs cursor-pointer"
+              >
+                Entrar →
+              </button>
             </div>
           )}
 

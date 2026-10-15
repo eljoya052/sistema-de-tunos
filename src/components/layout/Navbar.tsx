@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useEvents } from '../../context/EventContext';
@@ -9,7 +9,9 @@ import {
   Radio,
   User,
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { soundManager } from '../../lib/audio';
 import { isSupabaseConfigured } from '../../lib/supabase';
@@ -27,10 +29,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [soundActive, setSoundActive] = useState(soundManager.isEnabled());
 
+  useEffect(() => {
+    setSoundActive(soundManager.isEnabled());
+    const unsub = soundManager.subscribe((active) => {
+      setSoundActive(active);
+    });
+    return unsub;
+  }, []);
+
   const handleToggleSound = () => {
-    soundManager.enableAudio();
-    soundManager.playChime();
-    setSoundActive(true);
+    const active = soundManager.toggleAudio();
+    setSoundActive(active);
   };
 
   const handleLogout = () => {
@@ -56,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                 </button>
               )}
 
-              <Link to="/" className="flex items-center gap-2.5 group">
+              <Link to={user?.role === 'ADMIN' ? '/admin' : user ? '/profesional' : '/'} className="flex items-center gap-2.5 group">
                 <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold tracking-tight shadow-xs group-hover:bg-indigo-700 transition">
                   TS
                 </div>
@@ -93,19 +102,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                 <span>Pantalla TV</span>
               </Link>
 
-              {/* Sound Test / Enable */}
+              {/* Sound Toggle (Activar / Desactivar Sonido) */}
               <button
                 type="button"
                 onClick={handleToggleSound}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition cursor-pointer ${
                   soundActive
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                    : 'border-slate-200 hover:bg-slate-100 text-slate-600'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 shadow-xs'
+                    : 'border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-600'
                 }`}
-                title="Probar / Activar timbre de llamados"
+                title={soundActive ? 'Desactivar sonido (Silenciar)' : 'Activar sonido de llamados'}
               >
-                <Radio className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">{soundActive ? 'Audio Activo' : 'Activar Audio'}</span>
+                {soundActive ? (
+                  <Volume2 className="w-3.5 h-3.5 text-emerald-600" />
+                ) : (
+                  <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+                )}
+                <span className="hidden md:inline">
+                  {soundActive ? 'Desactivar Sonido' : 'Activar Sonido'}
+                </span>
               </button>
 
               {/* Database status button */}
@@ -165,6 +180,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                             className={`w-full text-left px-2 py-1 text-xs rounded-md transition ${user.id === 'user-admin-01' ? 'bg-indigo-100 text-indigo-900 font-semibold' : 'hover:bg-slate-200 text-slate-700'}`}
                           >
                             🛡️ Administrador General
+                          </button>
+                          <button
+                            onClick={() => { switchUser('user-pro-med'); setShowUserDropdown(false); navigate('/profesional'); }}
+                            className={`w-full text-left px-2 py-1 text-xs rounded-md transition ${user.id === 'user-pro-med' ? 'bg-indigo-100 text-indigo-900 font-semibold' : 'hover:bg-slate-200 text-slate-700'}`}
+                          >
+                            🩺 Medicina General (Box 5)
+                          </button>
+                          <button
+                            onClick={() => { switchUser('user-pro-oft'); setShowUserDropdown(false); navigate('/profesional'); }}
+                            className={`w-full text-left px-2 py-1 text-xs rounded-md transition ${user.id === 'user-pro-oft' ? 'bg-indigo-100 text-indigo-900 font-semibold' : 'hover:bg-slate-200 text-slate-700'}`}
+                          >
+                            👁️ Oftalmología (Box 6)
                           </button>
                           <button
                             onClick={() => { switchUser('user-pro-psi'); setShowUserDropdown(false); navigate('/profesional'); }}

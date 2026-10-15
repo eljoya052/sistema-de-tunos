@@ -7,9 +7,39 @@
 class SoundSynthesizer {
   private audioCtx: AudioContext | null = null;
   private soundEnabled: boolean = false;
+  private listeners: Set<(enabled: boolean) => void> = new Set();
 
   constructor() {
-    // AudioContext is initialized on first user interaction to comply with browser autoplay policies
+    // AudioContext is initialized on user interaction to comply with browser autoplay policies
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('turno_social_sound_enabled');
+      // Default to false until user explicitly interacts/enables, or respect previous choice
+      if (saved !== null) {
+        this.soundEnabled = saved === 'true';
+      }
+    }
+  }
+
+  public subscribe(listener: (enabled: boolean) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify(): void {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('turno_social_sound_enabled', String(this.soundEnabled));
+      } catch {
+        // ignore
+      }
+    }
+    for (const listener of this.listeners) {
+      try {
+        listener(this.soundEnabled);
+      } catch (e) {
+        console.warn('Sound listener error:', e);
+      }
+    }
   }
 
   public enableAudio(): boolean {
@@ -22,16 +52,43 @@ class SoundSynthesizer {
         this.audioCtx.resume();
       }
       this.soundEnabled = true;
+      this.notify();
       return true;
     } catch (e) {
       console.warn('AudioContext could not be initialized:', e);
       this.soundEnabled = false;
+      this.notify();
       return false;
     }
   }
 
+  public disableAudio(): void {
+    this.soundEnabled = false;
+    if (this.audioCtx && this.audioCtx.state === 'running') {
+      try {
+        this.audioCtx.suspend();
+      } catch (e) {
+        console.warn('Error suspending audio context:', e);
+      }
+    }
+    this.notify();
+  }
+
+  public toggleAudio(): boolean {
+    if (this.soundEnabled) {
+      this.disableAudio();
+      return false;
+    } else {
+      const ok = this.enableAudio();
+      if (ok) {
+        this.playChime();
+      }
+      return ok;
+    }
+  }
+
   public isEnabled(): boolean {
-    return this.soundEnabled && this.audioCtx !== null && this.audioCtx.state === 'running';
+    return this.soundEnabled;
   }
 
   public playChime(): void {

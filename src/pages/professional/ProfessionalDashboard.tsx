@@ -10,6 +10,7 @@ import { soundManager } from '../../lib/audio';
 import {
   Bell,
   Volume2,
+  VolumeX,
   CheckCircle,
   UserX,
   Clock,
@@ -80,10 +81,19 @@ export const ProfessionalDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    repository.getServices(true).then((srvs) => {
+    repository.getServices(true).then(async (srvs) => {
       setAllServices(srvs);
-      if (!activeService && srvs.length > 0) {
-        setActiveService(srvs[0]);
+      if (!activeService) {
+        if (assignedServices && assignedServices.length > 0) {
+          setActiveService(assignedServices[0]);
+        } else if (srvs.length > 0) {
+          const userProServices = user ? await repository.getProfessionalServices(user.id) : [];
+          const matched =
+            srvs.find((s) => userProServices.some((ps) => ps.id === s.id)) ||
+            srvs.find((s) => user?.full_name && (s.name.toLowerCase().includes(user.full_name.toLowerCase()) || user.full_name.toLowerCase().includes(s.name.toLowerCase()))) ||
+            srvs[0];
+          setActiveService(matched);
+        }
       }
     });
 
@@ -104,12 +114,17 @@ export const ProfessionalDashboard: React.FC = () => {
     };
     window.addEventListener('storage', handleStorage);
 
+    const unsubSound = soundManager.subscribe((active) => {
+      setSoundEnabled(active);
+    });
+
     const interval = setInterval(() => {
       loadWorkstationData();
     }, 1000);
 
     return () => {
       unsubscribe();
+      unsubSound();
       window.removeEventListener('turno_social_call', handleCustomCall);
       window.removeEventListener('storage', handleStorage);
       clearInterval(interval);
@@ -224,13 +239,8 @@ export const ProfessionalDashboard: React.FC = () => {
   };
 
   const handleToggleSound = () => {
-    const enabled = soundManager.enableAudio();
-    if (enabled) {
-      soundManager.playChime();
-      setSoundEnabled(true);
-    } else {
-      setSoundEnabled(false);
-    }
+    const active = soundManager.toggleAudio();
+    setSoundEnabled(active);
   };
 
   if (!user) {
@@ -280,6 +290,8 @@ export const ProfessionalDashboard: React.FC = () => {
                     else if (found.code === 'PSI') setDeskNumber('Box 1');
                     else if (found.code === 'FON') setDeskNumber('Box 3');
                     else if (found.code === 'KIN') setDeskNumber('Box 4');
+                    else if (found.code === 'MED') setDeskNumber('Box 5');
+                    else if (found.code === 'OFT') setDeskNumber('Box 6');
                     else if (found.code === 'ASO') setDeskNumber('Módulo A');
                     else if (found.code === 'JUR') setDeskNumber('Módulo B');
                     else if (found.code === 'VET') setDeskNumber('Área Canina');
@@ -309,18 +321,24 @@ export const ProfessionalDashboard: React.FC = () => {
               />
             </div>
 
-            {/* Sound Toggle */}
+            {/* Sound Toggle (Activar / Desactivar Sonido) */}
             <button
               onClick={handleToggleSound}
-              className={`p-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition ${
+              className={`p-2 sm:px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
                 soundEnabled
-                  ? 'border-emerald-600 bg-emerald-950/80 text-emerald-400'
-                  : 'border-slate-700 bg-slate-800 text-slate-300'
+                  ? 'border-emerald-600 bg-emerald-950/80 text-emerald-300 hover:bg-emerald-900 shadow-xs'
+                  : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
-              title="Activar o probar sonido de campanilla"
+              title={soundEnabled ? 'Desactivar sonido (Silenciar campanilla)' : 'Activar sonido de campanilla'}
             >
-              <Volume2 className="w-4 h-4" />
-              <span className="hidden md:inline">{soundEnabled ? 'Sonido OK' : 'Sonido'}</span>
+              {soundEnabled ? (
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <VolumeX className="w-4 h-4 text-slate-400" />
+              )}
+              <span className="hidden sm:inline">
+                {soundEnabled ? 'Desactivar Sonido' : 'Activar Sonido'}
+              </span>
             </button>
 
             {/* Open Standalone Public Screen */}
