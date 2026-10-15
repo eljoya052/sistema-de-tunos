@@ -61,6 +61,10 @@ export const TicketsManagementPage: React.FC = () => {
   const [historyTicket, setHistoryTicket] = useState<Ticket | null>(null);
   const [historyEvents, setHistoryEvents] = useState<TicketEvent[]>([]);
 
+  // Reset tickets to zero (Admin only)
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
   const loadData = async () => {
     try {
       const [tkts, srvs, profs] = await Promise.all([
@@ -198,6 +202,20 @@ export const TicketsManagementPage: React.FC = () => {
     setHistoryEvents(events);
   };
 
+  const handleConfirmReset = async () => {
+    if (user?.role !== 'ADMIN') return;
+    try {
+      setIsResetting(true);
+      await repository.resetAllTicketsToZero();
+      await loadData();
+      setShowResetModal(false);
+    } catch (err: unknown) {
+      console.error('Error al reiniciar turnos:', err);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -212,19 +230,16 @@ export const TicketsManagementPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={async () => {
-              if (window.confirm('¿Confirmas que deseas poner todos los turnos y contadores en cero?')) {
-                await repository.resetAllTicketsToZero();
-                await loadData();
-              }
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-semibold rounded-lg transition cursor-pointer"
-            title="Poner todos los turnos y contadores en cero"
-          >
-            <RotateCcw className="w-4 h-4 text-rose-600" />
-            <span>Turnos a Cero</span>
-          </button>
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={() => setShowResetModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-semibold rounded-lg transition cursor-pointer shadow-xs"
+              title="Acción exclusiva de Administrador: Poner todos los turnos y contadores en cero"
+            >
+              <RotateCcw className="w-4 h-4 text-rose-600" />
+              <span>Turnos a Cero (Admin)</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -534,6 +549,19 @@ export const TicketsManagementPage: React.FC = () => {
           setReopenModalTicket(null);
           setReopenReason('');
         }}
+      />
+
+      {/* Admin-only Reset Tickets to Zero Modal */}
+      <ConfirmModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={handleConfirmReset}
+        title="Poner todos los turnos en cero (Exclusivo Administrador)"
+        description="¿Confirmas que deseas reiniciar todos los turnos y contadores a cero? Todos los servicios comenzarán nuevamente desde el correlativo 001 y las pantallas de llamados se limpiarán. Esta acción es exclusiva de administradores."
+        confirmText={isResetting ? 'Reiniciando...' : 'Sí, Poner Turnos a Cero'}
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isResetting}
       />
 
       {/* Edit Person Modal */}

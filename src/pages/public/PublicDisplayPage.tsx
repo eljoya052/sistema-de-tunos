@@ -16,8 +16,7 @@ import {
   ChevronUp,
   Sparkles,
   Layers,
-  ShieldCheck,
-  RotateCcw
+  ShieldCheck
 } from 'lucide-react';
 
 export const PublicDisplayPage: React.FC = () => {
@@ -213,20 +212,6 @@ export const PublicDisplayPage: React.FC = () => {
     }
   };
 
-  const handleQuickResetToZero = async () => {
-    try {
-      setIsCalling(true);
-      await repository.resetAllTicketsToZero();
-      await loadData();
-      setQuickSuccessMsg('Turnos y contadores reiniciados a cero');
-      setTimeout(() => setQuickSuccessMsg(null), 3000);
-    } catch (err: unknown) {
-      alert((err as Error).message || 'Error al reiniciar turnos');
-    } finally {
-      setIsCalling(false);
-    }
-  };
-
   const filteredCalls = selectedServiceId === 'ALL'
     ? publicCalls
     : publicCalls.filter((c) => {
@@ -293,17 +278,6 @@ export const PublicDisplayPage: React.FC = () => {
                 <span>Volver a Llamar</span>
               </button>
             )}
-
-            {/* RESET TICKETS TO ZERO BUTTON */}
-            <button
-              onClick={handleQuickResetToZero}
-              disabled={isCalling}
-              className="px-2.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/80 text-rose-300 font-bold rounded-lg transition flex items-center gap-1 cursor-pointer disabled:opacity-50 text-[11px]"
-              title="Poner todos los turnos y contadores en cero"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>Turnos a Cero</span>
-            </button>
 
             {quickSuccessMsg && (
               <span className="text-emerald-400 font-semibold px-2 py-0.5 bg-emerald-950/80 border border-emerald-800 rounded animate-in fade-in">

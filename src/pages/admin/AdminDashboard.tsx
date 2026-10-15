@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { repository } from '../../lib/repository';
 import { useEvents } from '../../context/EventContext';
+import { useAuth } from '../../context/AuthContext';
 import { Ticket, Service, Profile, Person } from '../../types/database';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import {
   Users,
   Ticket as TicketIcon,
@@ -21,12 +23,15 @@ import {
 
 export const AdminDashboard: React.FC = () => {
   const { activeEvent } = useEvents();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const loadData = async () => {
     try {
@@ -73,10 +78,17 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  const handleResetToZero = async () => {
-    if (window.confirm('¿Confirmas que deseas poner todos los turnos y contadores en cero?')) {
+  const handleConfirmReset = async () => {
+    if (user?.role !== 'ADMIN') return;
+    try {
+      setIsResetting(true);
       await repository.resetAllTicketsToZero();
       await loadData();
+      setShowResetModal(false);
+    } catch (err: unknown) {
+      console.error('Error al reiniciar turnos:', err);
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -89,19 +101,21 @@ export const AdminDashboard: React.FC = () => {
             Panel de Control Central
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Supervisión integral en tiempo real del operativo social y sus 8 servicios.
+            Supervisión integral en tiempo real del operativo social y sus 10 servicios profesionales.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            onClick={handleResetToZero}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-semibold rounded-lg transition cursor-pointer"
-            title="Poner todos los turnos y contadores en cero"
-          >
-            <RotateCcw className="w-4 h-4 text-rose-600" />
-            <span>Turnos a Cero</span>
-          </button>
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={() => setShowResetModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-semibold rounded-lg transition cursor-pointer shadow-xs"
+              title="Acción exclusiva de Administrador: Poner todos los turnos y contadores en cero"
+            >
+              <RotateCcw className="w-4 h-4 text-rose-600" />
+              <span>Turnos a Cero (Admin)</span>
+            </button>
+          )}
 
           <Link
             to="/profesional"
@@ -362,6 +376,19 @@ export const AdminDashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Admin-only Reset Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={handleConfirmReset}
+        title="Poner todos los turnos en cero (Exclusivo Administrador)"
+        description="¿Confirmas que deseas reiniciar todos los turnos y contadores a cero? Todos los servicios comenzarán nuevamente desde el correlativo 001 y las pantallas de llamados se limpiarán. Esta acción es exclusiva de administradores."
+        confirmText={isResetting ? 'Reiniciando...' : 'Sí, Poner Turnos a Cero'}
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isResetting}
+      />
     </div>
   );
 };
